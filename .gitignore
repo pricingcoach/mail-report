@@ -1,0 +1,43 @@
+# Environment variables — NEVER commit
+.env
+
+# Large data files
+*.xml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+log_dosyasi.txt
+
+# Google API credentials — NEVER commit
+credentials.json
+service_account.json
+token.json
+token*.json
+
+# Modules not included in repo
+history-forecast-loop/
+
+# Claude internal
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Excel / output files
+*.xlsx
+*.xls
+*.csv
