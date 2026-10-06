@@ -161,9 +161,17 @@ class HotelDataAnalyzeClass(DataAnalyzer):
 
         data.drop('year', axis=1, inplace=True)
 
-        for j in different_currency_data.index:
-            if j in data.index and data.loc[j]["currency"] != hotel_currency:
-                logger.warning("Satir %d icin kur donusumu yapilamadi.", j)
+        failed_indices = [
+            j for j in different_currency_data.index
+            if j in data.index and data.loc[j]["currency"] != hotel_currency
+        ]
+        if failed_indices:
+            logger.warning(
+                "%d kayit icin kur donusumu yapilamadi, atlanıyor: %s",
+                len(failed_indices),
+                data.loc[failed_indices, "currency"].value_counts().to_dict(),
+            )
+            data = data.drop(index=failed_indices).reset_index(drop=True)
 
         logger.info("Tum veriler %s para birimine basariyla donusturuldu.", hotel_currency)
         return data
