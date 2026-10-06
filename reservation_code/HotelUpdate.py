@@ -18,6 +18,12 @@ from grp_pickup_import import parse_grppickup_xml, aggregate_by_block, grppickup
 
 logger = logging.getLogger(__name__)
 
+RECOGNIZED_CURRENCIES = {
+    "EUR", "TRY", "USD", "GBP", "RUB",
+    "AED", "CHF", "SEK", "NOK", "DKK",
+    "JPY", "CNY",
+}
+
 HOTEL_CONFIGS_PATH = os.path.join(os.path.dirname(__file__), "..", "hotel_analysis", "hotel_configs.json")
 
 
@@ -226,6 +232,7 @@ class HotelUpdate:
     def _process_ramada_dates(self, data):
         """Date processing for Ramada PMS type"""
         data.loc[data['status'] != 'CANCELLED', 'status'] = 'ACTIVE'
+        data.loc[data['status'] == 'CANCELLED', 'status'] = 'CANCELED'
         for col in ['booking_date', 'arrival_date', 'departure_date']:
             data[col] = data[col].apply(lambda x: pd.to_datetime(x, format='%d.%m.%y', dayfirst=True))
         data['booking_no'] = data['booking_no'].astype(int)
@@ -263,6 +270,23 @@ class HotelUpdate:
                     data = process.currencyCalculate(data)
             else:
                 data = process.currencyCalculate(data)
+
+            # Tanımsız currency kodlu satırları filtrele (GRC, GRA, GRB, GRE vb.)
+            # currencyCalculate sonrası boş string'ler EUR/TRY'ye dönmüş olur;
+            # kalan bilinmeyen kodlar Java'ya giderse total_price = 0.00 olur.
+            if 'currency' in data.columns:
+                unrecognized = (
+                    data['currency'].notna()
+                    & (data['currency'] != '')
+                    & ~data['currency'].isin(RECOGNIZED_CURRENCIES)
+                )
+                if unrecognized.any():
+                    logger.warning(
+                        "%d kayit tanımsız currency kodu nedeniyle atlanıyor: %s",
+                        unrecognized.sum(),
+                        data.loc[unrecognized, 'currency'].value_counts().to_dict(),
+                    )
+                    data = data[~unrecognized].reset_index(drop=True)
 
             data = process.convert_to_hotel_currency(data, company_id=company_id or hotel_id, fallback_currency=config_currency)
             data = process.roomTypeMatch(data, lookup)
