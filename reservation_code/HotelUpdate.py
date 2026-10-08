@@ -226,6 +226,7 @@ class HotelUpdate:
     def _process_ramada_dates(self, data):
         """Date processing for Ramada PMS type"""
         data.loc[data['status'] != 'CANCELLED', 'status'] = 'ACTIVE'
+        data.loc[data['status'] == 'CANCELLED', 'status'] = 'CANCELED'
         for col in ['booking_date', 'arrival_date', 'departure_date']:
             data[col] = data[col].apply(lambda x: pd.to_datetime(x, format='%d.%m.%y', dayfirst=True))
         data['booking_no'] = data['booking_no'].astype(int)
